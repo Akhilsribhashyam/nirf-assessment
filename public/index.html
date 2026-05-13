@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NIRF TLR Assessment</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Sans:wght@400;500;600&display=swap');
+
+:root {
+  --bg:    #06080d;
+  --sur:   #0d1320;
+  --sur2:  #101828;
+  --bdr:   #1a2540;
+  --bdr2:  #1e2d48;
+  --acc:   #3b82f6;
+  --acc2:  #6366f1;
+  --grn:   #10b981;
+  --red:   #ef4444;
+  --org:   #f59e0b;
+  --txt:   #e2e8f0;
+  --txt2:  #94a3b8;
+  --txt3:  #475569;
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Instrument Sans', sans-serif;
+  background: var(--bg);
+  color: var(--txt);
+  min-height: 100vh;
+  padding: 44px 20px 80px;
+  display: flex;
+  justify-content: center;
+}
+.wrap { width: 100%; max-width: 640px; }
+
+/* Screens */
+.scr { display: none; animation: rise .4s cubic-bezier(.22,1,.36,1) both; }
+.scr.on { display: block; }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── SCREEN 1: Welcome ─── */
+.top-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 52px;
+}
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--acc); }
+.brand {
+  font-family: 'Syne', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: var(--txt3);
+}
+
+.hero-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 44px; font-weight: 800;
+  line-height: 1.06; letter-spacing: -1.5px;
+  margin-bottom: 14px;
+}
+.hero-title em {
+  font-style: normal;
+  background: linear-gradient(135deg, var(--acc) 0%, var(--acc2) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-sub {
+  font-size: 15px; color: var(--txt2);
+  line-height: 1.7; margin-bottom: 44px;
+  max-width: 480px;
+}
+
+.stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 44px; }
+.stat-card {
+  background: var(--sur); border: 1px solid var(--bdr2);
+  border-radius: 14px; padding: 20px 18px;
+}
+.stat-card .n {
+  font-family: 'Syne', sans-serif;
+  font-size: 30px; font-weight: 800;
+  color: var(--acc); line-height: 1; margin-bottom: 6px;
+}
+.stat-card .l { font-size: 12px; color: var(--txt3); line-height: 1.4; }
+
+.field-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--txt3); margin-bottom: 10px;
+}
+.name-inp {
+  width: 100%;
+  background: var(--sur);
+  border: 1.5px solid var(--bdr2);
+  border-radius: 12px;
+  padding: 16px 20px;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 17px; font-weight: 500;
+  color: var(--txt);
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  margin-bottom: 28px;
+}
+.name-inp:focus {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.12);
+}
+.name-inp::placeholder { color: var(--txt3); }
+
+.btn-primary {
+  width: 100%;
+  background: linear-gradient(135deg, var(--acc), var(--acc2));
+  color: #fff; border: none;
+  border-radius: 12px; padding: 17px;
+  font-family: 'Syne', sans-serif;
+  font-size: 14px; font-weight: 700; letter-spacing: .3px;
+  cursor: pointer;
+  transition: opacity .2s, transform .15s, box-shadow .2s;
+  box-shadow: 0 4px 24px rgba(59,130,246,.25);
+}
+.btn-primary:hover:not(:disabled) {
+  opacity: .88; transform: translateY(-1px);
+  box-shadow: 0 6px 32px rgba(59,130,246,.35);
+}
+.btn-primary:disabled { opacity: .35; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* ─── SCREEN 2: Quiz ─── */
+.quiz-nav {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.q-label { font-size: 13px; color: var(--txt2); }
+.q-label strong { color: var(--txt); }
+
+/* Timer */
+.timer-wrap { position: relative; width: 52px; height: 52px; }
+.t-svg { transform: rotate(-90deg); }
+.t-bg  { fill: none; stroke: var(--bdr); stroke-width: 4; }
+.t-fg  { fill: none; stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset .95s linear, stroke .3s; }
+.t-num {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif;
+  font-size: 14px; font-weight: 800;
+}
+
+.prog-wrap { height: 2px; background: var(--bdr); border-radius: 2px; margin-bottom: 24px; overflow: hidden; }
+.prog-fill { height: 100%; background: linear-gradient(90deg, var(--acc), var(--acc2)); transition: width .35s ease; }
+
+.q-card {
+  background: var(--sur);
+  border: 1px solid var(--bdr2);
+  border-radius: 18px;
+  padding: 28px 28px 24px;
+  margin-bottom: 14px;
+}
+
+.type-tag {
+  display: inline-block;
+  font-size: 9px; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 3px 10px; border-radius: 20px;
+  margin-bottom: 16px;
+}
+.tc { background: rgba(16,185,129,.1); color: #34d399; border: 1px solid rgba(16,185,129,.2); }
+.tk { background: rgba(245,158,11,.1); color: #fbbf24; border: 1px solid rgba(245,158,11,.2); }
+.ta { background: rgba(99,102,241,.12); color: #a5b4fc; border: 1px solid rgba(99,102,241,.25); }
+
+.q-text {
+  font-size: 15px; line-height: 1.7;
+  color: #c8d4e8; margin-bottom: 22px;
+}
+
+.options { display: flex; flex-direction: column; gap: 8px; }
+.opt-btn {
+  background: var(--sur2);
+  border: 1.5px solid var(--bdr);
+  border-radius: 11px; padding: 13px 16px;
+  color: #8faabe;
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 14px; cursor: pointer;
+  text-align: left;
+  display: flex; align-items: flex-start; gap: 11px;
+  line-height: 1.5;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.opt-btn:hover:not(:disabled) {
+  background: #131e32; border-color: var(--acc); color: var(--txt);
+}
+.opt-btn.correct { background: rgba(16,185,129,.08); border-color: #10b981; color: #6ee7b7; }
+.opt-btn.wrong   { background: rgba(239,68,68,.08);  border-color: #ef4444; color: #fca5a5; }
+.opt-btn.reveal  { background: rgba(16,185,129,.06); border-color: #10b981; color: #6ee7b7; opacity: .6; }
+.opt-lbl {
+  width: 22px; height: 22px; min-width: 22px;
+  border-radius: 50%; background: var(--bdr);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: var(--txt3);
+  flex-shrink: 0; margin-top: 1px;
+}
+.opt-btn.correct .opt-lbl { background: rgba(16,185,129,.2); color: #10b981; }
+.opt-btn.wrong   .opt-lbl { background: rgba(239,68,68,.2);  color: #ef4444; }
+
+.expl {
+  background: rgba(59,130,246,.06);
+  border-left: 3px solid var(--acc);
+  border-radius: 0 10px 10px 0;
+  padding: 13px 16px; margin-top: 16px;
+  font-size: 13px; color: #7aa8cc; line-height: 1.7;
+  display: none;
+}
+.timeout-msg {
+  display: none;
+  background: rgba(245,158,11,.08);
+  border: 1px solid rgba(245,158,11,.2);
+  border-radius: 10px; padding: 10px 14px;
+  font-size: 13px; color: #fbbf24;
+  margin-top: 12px; text-align: center;
+}
+
+.q-foot { display: flex; justify-content: flex-end; margin-top: 14px; }
+.btn-next {
+  background: linear-gradient(135deg, var(--acc), var(--acc2));
+  color: #fff; border: none;
+  border-radius: 10px; padding: 11px 24px;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer; display: none;
+  transition: opacity .2s;
+  box-shadow: 0 2px 16px rgba(59,130,246,.2);
+}
+.btn-next:hover { opacity: .85; }
+
+/* ─── SCREEN 3: Results ─── */
+.res-top { text-align: center; margin-bottom: 36px; }
+
+.ring-wrap { position: relative; width: 160px; height: 160px; margin: 0 auto 22px; }
+.r-svg { transform: rotate(-90deg); }
+.r-bg  { fill: none; stroke: var(--bdr); stroke-width: 9; }
+.r-fg  { fill: none; stroke-width: 9; stroke-linecap: round;
+         transition: stroke-dashoffset 1.4s cubic-bezier(.22,1,.36,1); }
+.ring-inner {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.r-pct {
+  font-family: 'Syne', sans-serif;
+  font-size: 40px; font-weight: 800; line-height: 1;
+}
+.r-frac { font-size: 12px; color: var(--txt3); margin-top: 4px; }
+
+.res-grade {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px; font-weight: 800; margin-bottom: 8px;
+}
+.res-note { font-size: 14px; color: var(--txt2); line-height: 1.6; max-width: 420px; margin: 0 auto; }
+
+.bd-card {
+  background: var(--sur); border: 1px solid var(--bdr2);
+  border-radius: 16px; overflow: hidden; margin-bottom: 18px;
+}
+.bd-head {
+  padding: 14px 20px; background: var(--sur2);
+  border-bottom: 1px solid var(--bdr);
+  font-family: 'Syne', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--acc2);
+}
+.bd-row {
+  display: flex; align-items: center;
+  padding: 12px 20px; border-bottom: 1px solid var(--bdr);
+  font-size: 14px; color: var(--txt2); gap: 14px;
+}
+.bd-row:last-child { border-bottom: none; }
+.bd-lbl { width: 110px; flex-shrink: 0; }
+.bd-bar-wrap { flex: 1; height: 5px; background: var(--bdr); border-radius: 3px; overflow: hidden; }
+.bd-bar { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--acc), var(--acc2)); transition: width 1s ease; }
+.bd-val { font-family: 'Syne', sans-serif; font-weight: 700; color: var(--txt); width: 44px; text-align: right; flex-shrink: 0; }
+
+/* Email status */
+.send-section { margin-bottom: 14px; }
+.btn-send {
+  width: 100%;
+  background: linear-gradient(135deg, #064e3b, #065f46);
+  color: #34d399; border: 1px solid #065f46;
+  border-radius: 12px; padding: 17px;
+  font-family: 'Syne', sans-serif;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  transition: opacity .2s, transform .15s;
+  box-shadow: 0 4px 20px rgba(16,185,129,.15);
+}
+.btn-send:hover:not(:disabled) { opacity: .85; transform: translateY(-1px); }
+.btn-send:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+.send-status {
+  margin-top: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 13px; line-height: 1.5;
+  text-align: center; display: none;
+}
+.send-status.sending { background: rgba(59,130,246,.08); border: 1px solid rgba(59,130,246,.2); color: #93c5fd; display: block; }
+.send-status.sent    { background: rgba(16,185,129,.08); border: 1px solid rgba(16,185,129,.2); color: #6ee7b7; display: block; }
+.send-status.error   { background: rgba(239,68,68,.08);  border: 1px solid rgba(239,68,68,.2);  color: #fca5a5; display: block; }
+
+.btn-retry {
+  width: 100%;
+  background: var(--sur); color: var(--txt2);
+  border: 1px solid var(--bdr); border-radius: 12px; padding: 16px;
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: background .2s, color .2s;
+}
+.btn-retry:hover { background: var(--sur2); color: var(--txt); }
+
+/* Spinner */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(52,211,153,.3);
+  border-top-color: #34d399;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: none;
+}
+.btn-send.loading .spinner { display: block; }
+.btn-send.loading .btn-icon { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ── SCREEN 1: Welcome ── -->
+<div class="scr on" id="s1">
+  <div class="top-row">
+    <div class="dot"></div>
+    <div class="brand">ICARE · NIRF Assessment Platform</div>
+  </div>
+
+  <h1 class="hero-title">Teaching, Learning<br>&amp; <em>Resources</em></h1>
+  <p class="hero-sub">
+    A timed assessment on the TLR parameter of the NIRF ranking framework.
+    Your score report will be automatically sent to your trainer upon completion.
+  </p>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="n">15</div>
+      <div class="l">Questions across 3 difficulty levels</div>
+    </div>
+    <div class="stat-card">
+      <div class="n">30s</div>
+      <div class="l">Time limit per question</div>
+    </div>
+    <div class="stat-card">
+      <div class="n">0.30</div>
+      <div class="l">TLR ranking weight in NIRF</div>
+    </div>
+  </div>
+
+  <div class="field-label">Your Full Name</div>
+  <input class="name-inp" id="name-inp" type="text"
+    placeholder="Enter your full name to begin"
+    autocomplete="off" autocorrect="off" spellcheck="false"/>
+
+  <button class="btn-primary" id="btn-start" onclick="startQuiz()" disabled>
+    Start Assessment →
+  </button>
+</div>
+
+<!-- ── SCREEN 2: Quiz ── -->
+<div class="scr" id="s2">
+  <div class="quiz-nav">
+    <div class="q-label">Question <strong id="qnum">1</strong> of 15 &nbsp;·&nbsp; Score: <strong id="qlive">0</strong></div>
+    <div class="timer-wrap">
+      <svg class="t-svg" width="52" height="52" viewBox="0 0 52 52">
+        <circle class="t-bg" cx="26" cy="26" r="22"/>
+        <circle class="t-fg" id="t-fg" cx="26" cy="26" r="22"
+          stroke-dasharray="138.23" stroke-dashoffset="0" stroke="#3b82f6"/>
+      </svg>
+      <div class="t-num" id="t-num">30</div>
+    </div>
+  </div>
+
+  <div class="prog-wrap">
+    <div class="prog-fill" id="prog-fill" style="width:0%"></div>
+  </div>
+
+  <div class="q-card" id="q-card"></div>
+
+  <div class="q-foot">
+    <button class="btn-next" id="btn-next" onclick="nextQ()">Continue →</button>
+  </div>
+</div>
+
+<!-- ── SCREEN 3: Results ── -->
+<div class="scr" id="s3">
+  <div class="top-row">
+    <div class="dot" style="background:var(--grn)"></div>
+    <div class="brand">Assessment Complete</div>
+  </div>
+
+  <div class="res-top">
+    <div class="ring-wrap">
+      <svg class="r-svg" width="160" height="160" viewBox="0 0 160 160">
+        <circle class="r-bg" cx="80" cy="80" r="68"/>
+        <circle class="r-fg" id="r-fg" cx="80" cy="80" r="68"
+          stroke-dasharray="427.26" stroke-dashoffset="427.26" stroke="#3b82f6"/>
+      </svg>
+      <div class="ring-inner">
+        <div class="r-pct" id="r-pct">0%</div>
+        <div class="r-frac" id="r-frac">0 / 15</div>
+      </div>
+    </div>
+    <div class="res-grade" id="r-grade">—</div>
+    <div class="res-note" id="r-note"></div>
+  </div>
+
+  <div class="bd-card">
+    <div class="bd-head">Score Breakdown</div>
+    <div id="bd-rows"></div>
+  </div>
+
+  <div class="send-section">
+    <button class="btn-send" id="btn-send" onclick="sendScore()">
+      <span class="btn-icon">✉</span>
+      <div class="spinner"></div>
+      Send Score Sheet to Trainer
+    </button>
+    <div class="send-status" id="send-status"></div>
+  </div>
+
+  <button class="btn-retry" onclick="resetAll()">↺ &nbsp;Retake Assessment</button>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+// ── Config ────────────────────────────────────────────────
+// Change this to your backend URL when deployed
+const BACKEND_URL = 'http://localhost:3000/submit-score';
+
+// ── Question bank ─────────────────────────────────────────
+const QS = [
+  { t:'c', q:'What is the total ranking weight of TLR in the NIRF overall score?',
+    o:['0.20','0.25','0.30','0.35'], a:2,
+    e:'TLR carries a ranking weight of 0.30 — joint highest alongside Research & Professional Practice (RP).' },
+
+  { t:'c', q:'How many sub-components make up TLR, and what is the maximum total marks?',
+    o:['4 components, 80 marks','5 components, 100 marks','6 components, 100 marks','6 components, 120 marks'], a:2,
+    e:'TLR = SS(20) + FSR(25) + FQE(20) + FRU(20) + OE(10) + MIRS(5) = 6 components, 100 marks total.' },
+
+  { t:'c', q:'Which TLR sub-component carries the highest individual marks?',
+    o:['SS — Student Strength: 20','FSR — Faculty-Student Ratio: 25','FQE — Faculty Qualification: 20','FRU — Financial Resources: 20'], a:1,
+    e:'FSR carries 25 marks — the single highest sub-component in TLR, reflecting NIRF\'s emphasis on adequate permanent faculty.' },
+
+  { t:'c', q:"In the SS formula, what does 'Np' represent?",
+    o:['Number of permanent faculty','Total PG students enrolled','Total doctoral students enrolled till previous academic year','PhD-qualified faculty count'], a:2,
+    e:'Np = Total doctoral students enrolled till the previous academic year. It appears in both the SS formula and as part of N (denominator) in FSR.' },
+
+  { t:'c', q:'Under FSR, which category of faculty is explicitly excluded from the count?',
+    o:["Faculty with Master's degrees","Faculty who taught in both semesters","Faculty with only a Bachelor's degree","Full-time regular faculty"], a:2,
+    e:'Faculty with only a Bachelor\'s degree are explicitly excluded. PhD and Master\'s degree holders are counted if full-time or if contract staff taught in both semesters.' },
+
+  { t:'k', q:'An institution has NT = 1200, Np = 60, and F = 72 full-time faculty. What is F/N and does FSR score zero?',
+    o:['1:17.5 — No zero','1:20 — No zero','1:60 — FSR = 0','1:15 — No zero'], a:0,
+    e:'N = NT + Np = 1200 + 60 = 1260. F/N = 72/1260 ≈ 1:17.5. FSR zeroes only when F/N < 1:50. At 1:17.5, no zero applies.' },
+
+  { t:'k', q:'For maximum FSR marks, what faculty-to-student ratio does NIRF expect?',
+    o:['1:10','1:15','1:20','1:25'], a:1,
+    e:'The expected ratio for maximum FSR is 1:15. Formula: FSR = 25 × [15 × (F/N)], capped at 25. At F/N = 1/15, result = 25 (full marks).' },
+
+  { t:'c', q:'In FQE, at what FRA (percentage of faculty with PhD) does FQ reach its maximum of 10?',
+    o:['80%','85%','90%','95%'], a:3,
+    e:'FQ = 10 when FRA ≥ 95%. Otherwise FQ = 10 × (FRA/95). Exactly 95% PhD-qualified faculty earns full 10 marks on FQ.' },
+
+  { t:'k', q:'An institution has FRA = 76%. What is the FQ score?',
+    o:['7.2','8.0','7.6','9.0'], a:1,
+    e:'FQ = 10 × (76/95) = 10 × 0.8 = 8.0 marks.' },
+
+  { t:'c', q:'The FE (experience) formula awards full 10 marks for which faculty distribution across experience bands?',
+    o:['All faculty with > 15 years','1:1:1 ratio across F1(≤8yr), F2(8–15yr), F3(>15yr)','Majority concentrated in F3 band','Equal F1 and F2, zero F3'], a:1,
+    e:"NIRF rationale states: 'Full marks for a ratio of 1:1:1'. FE = 3×min(3F1,1) + 3×min(3F2,1) + 4×min(3F3,1) = 10 when each fraction equals 1/3." },
+
+  { t:'k', q:'Faculty distribution: F1 = 50%, F2 = 30%, F3 = 20%. Calculate FE.',
+    o:['10','9','8.1','7'], a:2,
+    e:'FE = 3×min(1.5,1) + 3×min(0.9,1) + 4×min(0.6,1) = 3 + 2.7 + 2.4 = 8.1' },
+
+  { t:'c', q:'What is specifically EXCLUDED from BC (Capital Expenditure) in the FRU calculation?',
+    o:['Laboratory equipment purchases','Construction of new buildings','Faculty salaries','Library book acquisitions'], a:1,
+    e:'BC excludes expenditure on construction of new buildings. This ensures the metric reflects academic capital investment, not infrastructure projects.' },
+
+  { t:'k', q:'FRU = 5 × f(BC) + 15 × f(BO). If f(BC) = 0.6 and f(BO) = 0.8, what is FRU?',
+    o:['14','15','16','17'], a:1,
+    e:'FRU = 5 × 0.6 + 15 × 0.8 = 3 + 12 = 15 out of 20.' },
+
+  { t:'c', q:'What does MEE stand for in the MIRS component?',
+    o:['Minimum Enrollment Eligibility','Multiple Entry/Exit',"Master's Equivalent Education",'Mentorship & Experiential Engagement'], a:1,
+    e:'MEE = Multiple Entry/Exit — an NEP 2020 concept allowing flexible exit and re-entry with credit recognition. MIRS = MEE + IKS + RL + SLP.' },
+
+  { t:'a', q:'An institution scores SS=18, FSR=22, FQE=16, FRU=18, OE=7, MIRS=4. What is the weighted TLR contribution to the overall NIRF score?',
+    o:['25.5','85','22.5','26.5'], a:0,
+    e:'TLR = 18+22+16+18+7+4 = 85. Weighted contribution = 85 × 0.30 = 25.5 out of a maximum possible 30 marks.' }
+];
+
+// ── State ─────────────────────────────────────────────────
+let pName = '', cur = 0, score = 0, answered = false;
+let timerID = null, timeLeft = 30;
+let cat = { c:[0,0], k:[0,0], a:[0,0] };
+
+// ── Name input ────────────────────────────────────────────
+const nameInp = document.getElementById('name-inp');
+const btnStart = document.getElementById('btn-start');
+nameInp.addEventListener('input', () => {
+  btnStart.disabled = nameInp.value.trim().length < 2;
+});
+nameInp.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && nameInp.value.trim().length >= 2) startQuiz();
+});
+
+// ── Screen switch ─────────────────────────────────────────
+function show(id) {
+  document.querySelectorAll('.scr').forEach(s => s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+}
+
+// ── Start ─────────────────────────────────────────────────
+function startQuiz() {
+  pName = nameInp.value.trim();
+  cur = 0; score = 0; answered = false;
+  cat = { c:[0,0], k:[0,0], a:[0,0] };
+  show('s2');
+  renderQ();
+}
+
+// ── Render question ───────────────────────────────────────
+function renderQ() {
+  const q = QS[cur];
+  stopTimer(); answered = false;
+
+  document.getElementById('qnum').textContent = cur + 1;
+  document.getElementById('qlive').textContent = score;
+  document.getElementById('prog-fill').style.width = (cur / QS.length * 100) + '%';
+  document.getElementById('btn-next').style.display = 'none';
+
+  const tagMap = { c:['tc','Conceptual'], k:['tk','Calculation'], a:['ta','Applied'] };
+  const [cls, lbl] = tagMap[q.t];
+
+  let html = `<span class="type-tag ${cls}">${lbl}</span>`;
+  html += `<div class="q-text">${q.q}</div><div class="options">`;
+  q.o.forEach((opt, i) => {
+    html += `<button class="opt-btn" id="ob${i}" onclick="pick(${i})">
+      <span class="opt-lbl">${String.fromCharCode(65+i)}</span>${opt}
+    </button>`;
+  });
+  html += `</div>`;
+  html += `<div class="expl" id="expl">${q.e}</div>`;
+  html += `<div class="timeout-msg" id="tmout">⏱ Time expired — the correct answer is highlighted.</div>`;
+  document.getElementById('q-card').innerHTML = html;
+
+  startTimer();
+}
+
+// ── Timer ─────────────────────────────────────────────────
+function startTimer() {
+  timeLeft = 30; updateTimerUI(30);
+  timerID = setInterval(() => {
+    timeLeft--;
+    updateTimerUI(timeLeft);
+    if (timeLeft <= 0) { clearInterval(timerID); handleTimeout(); }
+  }, 1000);
+}
+function stopTimer() { if (timerID) { clearInterval(timerID); timerID = null; } }
+function updateTimerUI(t) {
+  const circ = 138.23;
+  const fg = document.getElementById('t-fg');
+  if (!fg) return;
+  fg.style.strokeDashoffset = circ * (1 - t / 30);
+  fg.style.stroke = t > 15 ? '#3b82f6' : t > 8 ? '#f59e0b' : '#ef4444';
+  const numEl = document.getElementById('t-num');
+  numEl.textContent = t;
+  numEl.style.color = t > 8 ? '#e2e8f0' : '#ef4444';
+}
+
+// ── Timeout ───────────────────────────────────────────────
+function handleTimeout() {
+  if (answered) return;
+  answered = true;
+  const q = QS[cur];
+  cat[q.t][1]++;
+  document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+  document.getElementById('ob' + q.a).classList.add('reveal');
+  document.getElementById('tmout').style.display = 'block';
+  document.getElementById('expl').style.display = 'block';
+  const nb = document.getElementById('btn-next');
+  nb.style.display = 'inline-block';
+  nb.textContent = cur === QS.length - 1 ? 'View Results →' : 'Continue →';
+}
+
+// ── Pick answer ───────────────────────────────────────────
+function pick(idx) {
+  if (answered) return;
+  stopTimer(); answered = true;
+  const q = QS[cur];
+  cat[q.t][1]++;
+  document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+  if (idx === q.a) {
+    document.getElementById('ob' + idx).classList.add('correct');
+    score++; cat[q.t][0]++;
+  } else {
+    document.getElementById('ob' + idx).classList.add('wrong');
+    document.getElementById('ob' + q.a).classList.add('reveal');
+  }
+  document.getElementById('expl').style.display = 'block';
+  document.getElementById('qlive').textContent = score;
+  const nb = document.getElementById('btn-next');
+  nb.style.display = 'inline-block';
+  nb.textContent = cur === QS.length - 1 ? 'View Results →' : 'Continue →';
+}
+
+// ── Next question ─────────────────────────────────────────
+function nextQ() {
+  cur++;
+  cur >= QS.length ? showResults() : renderQ();
+}
+
+// ── Results ───────────────────────────────────────────────
+function showResults() {
+  show('s3');
+  const pct = Math.round(score / QS.length * 100);
+
+  document.getElementById('r-pct').textContent = pct + '%';
+  document.getElementById('r-frac').textContent = score + ' / ' + QS.length;
+
+  // Animate ring
+  const gradeColor = pct >= 80 ? '#10b981' : pct >= 60 ? '#3b82f6' : pct >= 40 ? '#f59e0b' : '#ef4444';
+  setTimeout(() => {
+    const fg = document.getElementById('r-fg');
+    fg.style.strokeDashoffset = 427.26 * (1 - pct / 100);
+    fg.style.stroke = gradeColor;
+    document.getElementById('r-pct').style.color = gradeColor;
+  }, 150);
+
+  const grades = [
+    [87, 'Excellent 🎯',     'Strong command of TLR methodology — ready for institutional benchmarking work.'],
+    [70, 'Good 👍',          'Solid understanding of TLR. Minor gaps in formula-based components worth reviewing.'],
+    [50, 'Needs Work ⚠️',   'Core concepts are clear, but calculation-based sections need more practice.'],
+    [0,  'Revisit Basics 📚','Recommend re-reading the TLR methodology document carefully before re-attempting.'],
+  ];
+  const [, gradeLabel, gradeNote] = grades.find(([t]) => pct >= t);
+  document.getElementById('r-grade').textContent = gradeLabel;
+  document.getElementById('r-note').textContent = gradeNote;
+
+  // Breakdown
+  const catLabels = { c:'Conceptual', k:'Calculation', a:'Applied' };
+  let rows = `
+    <div class="bd-row">
+      <span class="bd-lbl">Total</span>
+      <div class="bd-bar-wrap"><div class="bd-bar" style="width:${pct}%"></div></div>
+      <span class="bd-val">${score}/${QS.length}</span>
+    </div>`;
+  ['c','k','a'].forEach(k => {
+    const [g, t] = cat[k];
+    if (!t) return;
+    const p = Math.round(g / t * 100);
+    rows += `
+    <div class="bd-row">
+      <span class="bd-lbl">${catLabels[k]}</span>
+      <div class="bd-bar-wrap"><div class="bd-bar" style="width:${p}%"></div></div>
+      <span class="bd-val">${g}/${t}</span>
+    </div>`;
+  });
+  document.getElementById('bd-rows').innerHTML = rows;
+
+  // Reset send button state
+  document.getElementById('btn-send').disabled = false;
+  document.getElementById('btn-send').classList.remove('loading');
+  document.getElementById('send-status').className = 'send-status';
+}
+
+// ── Send score to backend ─────────────────────────────────
+async function sendScore() {
+  const pct = Math.round(score / QS.length * 100);
+  const btn = document.getElementById('btn-send');
+  const st  = document.getElementById('send-status');
+
+  btn.disabled = true;
+  btn.classList.add('loading');
+  st.className = 'send-status sending';
+  st.textContent = '⏳ Sending score sheet to trainer...';
+
+  const payload = {
+    name:     pName,
+    score,
+    total:    QS.length,
+    pct,
+    catScore: cat,
+  };
+
+  try {
+    const res  = await fetch(BACKEND_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    });
+    const data = await res.json();
+
+    btn.classList.remove('loading');
+    if (res.ok && data.success) {
+      st.className = 'send-status sent';
+      st.textContent = '✓ Score sheet sent successfully to your trainer.';
+    } else {
+      throw new Error(data.error || 'Server error');
+    }
+  } catch (err) {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+    st.className = 'send-status error';
+    st.textContent = '✗ Could not reach the server. Please inform your trainer manually.';
+    console.error('Send error:', err.message);
+  }
+}
+
+// ── Reset ─────────────────────────────────────────────────
+function resetAll() {
+  stopTimer();
+  cur = 0; score = 0; answered = false;
+  cat = { c:[0,0], k:[0,0], a:[0,0] };
+  nameInp.value = '';
+  btnStart.disabled = true;
+  show('s1');
+}
+</script>
+</body>
+</html>
