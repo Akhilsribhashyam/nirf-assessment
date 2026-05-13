@@ -283,25 +283,9 @@ body {
 .bd-bar { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--acc), var(--acc2)); transition: width 1s ease; }
 .bd-val { font-family: 'Syne', sans-serif; font-weight: 700; color: var(--txt); width: 44px; text-align: right; flex-shrink: 0; }
 
-/* Email status */
-.send-section { margin-bottom: 14px; }
-.btn-send {
-  width: 100%;
-  background: linear-gradient(135deg, #064e3b, #065f46);
-  color: #34d399; border: 1px solid #065f46;
-  border-radius: 12px; padding: 17px;
-  font-family: 'Syne', sans-serif;
-  font-size: 14px; font-weight: 700;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center; gap: 9px;
-  transition: opacity .2s, transform .15s;
-  box-shadow: 0 4px 20px rgba(16,185,129,.15);
-}
-.btn-send:hover:not(:disabled) { opacity: .85; transform: translateY(-1px); }
-.btn-send:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-
+/* Auto-send status */
 .send-status {
-  margin-top: 10px;
+  margin-top: 14px; margin-bottom: 14px;
   padding: 12px 16px;
   border-radius: 10px;
   font-size: 13px; line-height: 1.5;
@@ -311,30 +295,50 @@ body {
 .send-status.sent    { background: rgba(16,185,129,.08); border: 1px solid rgba(16,185,129,.2); color: #6ee7b7; display: block; }
 .send-status.error   { background: rgba(239,68,68,.08);  border: 1px solid rgba(239,68,68,.2);  color: #fca5a5; display: block; }
 
-.btn-retry {
-  width: 100%;
-  background: var(--sur); color: var(--txt2);
-  border: 1px solid var(--bdr); border-radius: 12px; padding: 16px;
-  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
-  cursor: pointer; transition: background .2s, color .2s;
-}
-.btn-retry:hover { background: var(--sur2); color: var(--txt); }
-
-/* Spinner */
-@keyframes spin { to { transform: rotate(360deg); } }
-.spinner {
-  width: 16px; height: 16px;
-  border: 2px solid rgba(52,211,153,.3);
-  border-top-color: #34d399;
-  border-radius: 50%;
-  animation: spin .7s linear infinite;
+/* Webcam proctoring overlay */
+#proctor-box {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  width: 160px;
+  background: #0d1320;
+  border: 1px solid #1a2540;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,.5);
   display: none;
+  z-index: 999;
 }
-.btn-send.loading .spinner { display: block; }
-.btn-send.loading .btn-icon { display: none; }
+#proctor-box video {
+  width: 100%; height: 120px;
+  object-fit: cover; display: block;
+  transform: scaleX(-1);
+}
+#proctor-label {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 7px 10px;
+  font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: #ef4444;
+  background: #0a1020;
+}
+#proctor-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #ef4444;
+  animation: blink 1.2s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
 </style>
 </head>
 <body>
+
+<!-- Webcam proctoring overlay -->
+<div id="proctor-box">
+  <video id="proctor-video" autoplay muted playsinline></video>
+  <div id="proctor-label">
+    <div id="proctor-dot"></div>
+    Proctored
+  </div>
+</div>
+
 <div class="wrap">
 
 <!-- ── SCREEN 1: Welcome ── -->
@@ -428,16 +432,7 @@ body {
     <div id="bd-rows"></div>
   </div>
 
-  <div class="send-section">
-    <button class="btn-send" id="btn-send" onclick="sendScore()">
-      <span class="btn-icon">✉</span>
-      <div class="spinner"></div>
-      Send Score Sheet to Trainer
-    </button>
-    <div class="send-status" id="send-status"></div>
-  </div>
-
-  <button class="btn-retry" onclick="resetAll()">↺ &nbsp;Retake Assessment</button>
+  <div class="send-status" id="send-status"></div>
 </div>
 
 </div><!-- /wrap -->
@@ -536,6 +531,7 @@ function startQuiz() {
   cur = 0; score = 0; answered = false;
   cat = { c:[0,0], k:[0,0], a:[0,0] };
   show('s2');
+  startProctor();
   renderQ();
 }
 
@@ -678,30 +674,19 @@ function showResults() {
   });
   document.getElementById('bd-rows').innerHTML = rows;
 
-  // Reset send button state
-  document.getElementById('btn-send').disabled = false;
-  document.getElementById('btn-send').classList.remove('loading');
   document.getElementById('send-status').className = 'send-status';
+  sendScore();
 }
 
-// ── Send score to backend ─────────────────────────────────
+// ── Send score to backend (auto-called on quiz end) ───────
 async function sendScore() {
   const pct = Math.round(score / QS.length * 100);
-  const btn = document.getElementById('btn-send');
   const st  = document.getElementById('send-status');
 
-  btn.disabled = true;
-  btn.classList.add('loading');
   st.className = 'send-status sending';
-  st.textContent = '⏳ Sending score sheet to trainer...';
+  st.textContent = '⏳ Sending score report to trainer...';
 
-  const payload = {
-    name:     pName,
-    score,
-    total:    QS.length,
-    pct,
-    catScore: cat,
-  };
+  const payload = { name: pName, score, total: QS.length, pct, catScore: cat };
 
   try {
     const res  = await fetch(BACKEND_URL, {
@@ -710,26 +695,44 @@ async function sendScore() {
       body:    JSON.stringify(payload),
     });
     const data = await res.json();
-
-    btn.classList.remove('loading');
     if (res.ok && data.success) {
       st.className = 'send-status sent';
-      st.textContent = '✓ Score sheet sent successfully to your trainer.';
+      st.textContent = '✓ Score report sent to your trainer.';
     } else {
       throw new Error(data.error || 'Server error');
     }
   } catch (err) {
-    btn.classList.remove('loading');
-    btn.disabled = false;
     st.className = 'send-status error';
     st.textContent = '✗ Could not reach the server. Please inform your trainer manually.';
     console.error('Send error:', err.message);
   }
 }
 
+// ── Webcam proctoring ──────────────────────────────────────
+async function startProctor() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+    const video  = document.getElementById('proctor-video');
+    video.srcObject = stream;
+    document.getElementById('proctor-box').style.display = 'block';
+  } catch (e) {
+    console.warn('Camera access denied:', e.message);
+  }
+}
+
+function stopProctor() {
+  const video = document.getElementById('proctor-video');
+  if (video.srcObject) {
+    video.srcObject.getTracks().forEach(t => t.stop());
+    video.srcObject = null;
+  }
+  document.getElementById('proctor-box').style.display = 'none';
+}
+
 // ── Reset ─────────────────────────────────────────────────
 function resetAll() {
   stopTimer();
+  stopProctor();
   cur = 0; score = 0; answered = false;
   cat = { c:[0,0], k:[0,0], a:[0,0] };
   nameInp.value = '';
